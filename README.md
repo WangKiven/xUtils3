@@ -11,7 +11,7 @@
 
 #### 使用Gradle构建时添加一下依赖即可:
 ```javascript
-compile 'org.xutils:xutils:3.3.22'
+compile 'org.xutils:xutils:3.3.28'
 ```
 ##### 如果使用eclipse可以 [点击这里下载aar文件](http://dl.bintray.com/wyouflf/maven/org/xutils/xutils/), 然后用zip解压, 取出jar包和so文件.
 ##### 混淆配置参考示例项目sample的配置
@@ -37,7 +37,7 @@ compile 'org.xutils:xutils:3.3.22'
 public void onCreate() {
     super.onCreate();
     x.Ext.init(this);
-    x.Ext.setDebug(true); // 是否输出debug日志
+    x.Ext.setDebug(BuildConfig.DEBUG); // 是否输出debug日志, 开启debug会影响性能.
     ...
 }
 ```
