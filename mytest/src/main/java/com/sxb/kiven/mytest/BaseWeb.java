@@ -209,7 +209,8 @@ public class BaseWeb {
         try {
             RequestParams requestParams = new RequestParams("http://192.168.0.130:8086/app/wh/my/test3.json");
             requestParams.addQueryStringParameter("userAccount", userAccount);
-            requestParams.setConnectTimeout(1000 * 5);
+            requestParams.setConnectTimeout(1000 * 25);
+            requestParams.setMultipart(true);
 
             for (String string : paths) {
                 requestParams.addParameter("images", new File(string));

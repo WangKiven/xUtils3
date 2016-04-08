@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.animation.Animation;
@@ -68,7 +69,17 @@ import java.util.concurrent.atomic.AtomicLong;
                 protected int sizeOf(MemCacheKey key, Drawable value) {
                     if (value instanceof BitmapDrawable) {
                         Bitmap bitmap = ((BitmapDrawable) value).getBitmap();
-                        return bitmap == null ? 0 : bitmap.getByteCount();
+
+                        // TODO Kiven 将源代码修改适配到API8
+                        if (bitmap == null) {
+                            return 0;
+                        } else {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
+                                return bitmap.getByteCount();
+                            } else {
+                                return bitmap.getRowBytes() * bitmap.getHeight();
+                            }
+                        }
                     } else if (value instanceof GifDrawable) {
                         return ((GifDrawable) value).getByteCount();
                     }
@@ -529,7 +540,11 @@ import java.util.concurrent.atomic.AtomicLong;
                 if (view.getScaleType() == ImageView.ScaleType.CENTER) {
                     view.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
                 }
-                view.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+
+                // TODO Kiven 无适配到API8的setLayerType
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                    view.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+                }
             }
             if (options.getAnimation() != null) {
                 ImageAnimationHelper.animationDisplay(view, drawable, options.getAnimation());

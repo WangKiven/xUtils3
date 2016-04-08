@@ -4,6 +4,8 @@ import android.view.View;
 import android.widget.TextView;
 
 import org.xutils.DbManager;
+import org.xutils.common.util.KeyValue;
+import org.xutils.db.sqlite.WhereBuilder;
 import org.xutils.db.table.DbModel;
 import org.xutils.ex.DbException;
 import org.xutils.sample.db.Child;
@@ -28,7 +30,7 @@ public class DbFragment extends BaseFragment {
     DbManager.DaoConfig daoConfig = new DbManager.DaoConfig()
             .setDbName("test.db")
             // 不设置dbDir时, 默认存储在app的私有目录.
-            .setDbDir(new File("/sdcard")) // "sdcard"的写法并非最佳实践, 这里为了简单, 先这样写了.
+//            .setDbDir(new File("/sdcard")) // "sdcard"的写法并非最佳实践, 这里为了简单, 先这样写了.
             .setDbVersion(2)
             .setDbOpenListener(new DbManager.DbOpenListener() {
                 @Override
@@ -86,7 +88,8 @@ public class DbFragment extends BaseFragment {
             parent.setEmail("wyouflf@qq.com");
             parent.setTime(new Date());
             parent.setDate(new java.sql.Date(new Date().getTime()));
-            db.save(parent);
+            //db.save(parent);
+            db.saveBindingId(parent);
 
             db.saveBindingId(child);//保存对象关联数据库生成的id
 
@@ -114,8 +117,14 @@ public class DbFragment extends BaseFragment {
                 tv_db_result.setText(temp);
             }
 
-            //parent.name = "hahaha123";
-            //db.update(parent);
+            // test update
+            parent.name = "hahaha123";
+            parent.setEmail("wyouflf@gmail.com");
+            db.update(parent);
+            db.update(parent, "name", "email");
+            db.update(Parent.class,
+                    WhereBuilder.b("id", "=", 1).and("isAdmin", "=", true),
+                    new KeyValue("name", "test_name"), new KeyValue("isAdmin", false));
 
             Parent entity = child.getParent(db);
             temp += "find by id:" + entity.toString() + "\n";
