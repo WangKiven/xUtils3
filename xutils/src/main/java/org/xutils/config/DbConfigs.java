@@ -1,5 +1,7 @@
 package org.xutils.config;
 
+import android.os.Build;
+
 import org.xutils.DbManager;
 import org.xutils.common.util.LogUtil;
 import org.xutils.ex.DbException;
@@ -15,7 +17,10 @@ public enum DbConfigs {
             .setDbOpenListener(new DbManager.DbOpenListener() {
                 @Override
                 public void onDbOpened(DbManager db) {
-                    db.getDatabase().enableWriteAheadLogging();
+                    // TODO Kiven 适配到API9
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                        db.getDatabase().enableWriteAheadLogging();
+                    }
                 }
             })
             .setDbUpgradeListener(new DbManager.DbUpgradeListener() {
@@ -35,7 +40,10 @@ public enum DbConfigs {
             .setDbOpenListener(new DbManager.DbOpenListener() {
                 @Override
                 public void onDbOpened(DbManager db) {
-                    db.getDatabase().enableWriteAheadLogging();
+                    // TODO Kiven 适配到API9
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                        db.getDatabase().enableWriteAheadLogging();
+                    }
                 }
             })
             .setDbUpgradeListener(new DbManager.DbUpgradeListener() {

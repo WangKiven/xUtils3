@@ -12,6 +12,7 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.media.ExifInterface;
+import android.os.Build;
 
 import org.xutils.cache.DiskCacheEntity;
 import org.xutils.cache.DiskCacheFile;
@@ -597,9 +598,14 @@ public final class ImageDecoder {
      * @throws IOException
      */
     public static void compress(Bitmap bitmap, Bitmap.CompressFormat format, int quality, OutputStream out) throws IOException {
-        if (format == Bitmap.CompressFormat.WEBP) {
-            byte[] data = WebPFactory.encodeBitmap(bitmap, quality);
-            out.write(data);
+        // TODO Kiven 适配到API9
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            if (format == Bitmap.CompressFormat.WEBP) {
+                byte[] data = WebPFactory.encodeBitmap(bitmap, quality);
+                out.write(data);
+            } else {
+                bitmap.compress(format, quality, out);
+            }
         } else {
             bitmap.compress(format, quality, out);
         }
