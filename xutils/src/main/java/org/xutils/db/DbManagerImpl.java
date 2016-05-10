@@ -502,7 +502,15 @@ public final class DbManagerImpl extends DbBase {
         SQLiteStatement statement = null;
         try {
             statement = sqlInfo.buildStatement(database);
-            return statement.executeUpdateDelete();
+
+            // TODO 适配到1, 但11一下返回的数据有问题
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                return statement.executeUpdateDelete();
+            } else {
+                statement.execute();
+
+                return 1;
+            }
         } catch (Throwable e) {
             throw new DbException(e);
         } finally {
@@ -521,7 +529,14 @@ public final class DbManagerImpl extends DbBase {
         SQLiteStatement statement = null;
         try {
             statement = database.compileStatement(sql);
-            return statement.executeUpdateDelete();
+            // TODO 适配到1, 但11一下返回的数据有问题
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                return statement.executeUpdateDelete();
+            } else {
+                statement.execute();
+
+                return 1;
+            }
         } catch (Throwable e) {
             throw new DbException(e);
         } finally {
