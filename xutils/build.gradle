@@ -30,6 +30,14 @@ android {
     }
 }
 
+project.tasks.withType(JavaCompile) { task ->
+    /*if (!task.name.contains('Test')) {*/
+        options.compilerArgs << "-AguiceAnnotationDatabasePackageName=org.xutils"
+    /*} else {
+        options.compilerArgs << "-AguiceAnnotationDatabasePackageName=org.xutils + '.test'>"
+    }*/
+}
+
 install {
     repositories.mavenInstaller {
         // This generates POM.xml with proper parameters
