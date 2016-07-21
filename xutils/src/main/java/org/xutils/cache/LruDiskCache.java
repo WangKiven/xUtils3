@@ -2,6 +2,7 @@ package org.xutils.cache;
 
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import org.xutils.DbManager;
 import org.xutils.common.task.PriorityExecutor;
