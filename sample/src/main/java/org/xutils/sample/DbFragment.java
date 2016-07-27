@@ -1,5 +1,7 @@
 package org.xutils.sample;
 
+import android.os.Build;
+import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
@@ -15,7 +17,6 @@ import org.xutils.view.annotation.Event;
 import org.xutils.view.annotation.ViewInject;
 import org.xutils.x;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -36,7 +37,9 @@ public class DbFragment extends BaseFragment {
                 @Override
                 public void onDbOpened(DbManager db) {
                     // 开启WAL, 对写入加速提升巨大
-                    db.getDatabase().enableWriteAheadLogging();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                        db.getDatabase().enableWriteAheadLogging();
+                    }
                 }
             })
             .setDbUpgradeListener(new DbManager.DbUpgradeListener() {
@@ -53,6 +56,23 @@ public class DbFragment extends BaseFragment {
 
     @ViewInject(R.id.tv_db_result)
     private TextView tv_db_result;
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        getView().findViewById(R.id.btn_test_db).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onTestDbClick(v);
+            }
+        });
+        getView().findViewById(R.id.btn_test_db2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onTestDb2Click(v);
+            }
+        });
+    }
 
     @Event(R.id.btn_test_db)
     private void onTestDbClick(View view) {

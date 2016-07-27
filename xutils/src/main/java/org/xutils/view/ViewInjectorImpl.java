@@ -39,7 +39,10 @@ public final class ViewInjectorImpl implements ViewInjector {
     static {
         IGNORED.add(Object.class);
         IGNORED.add(Activity.class);
-        IGNORED.add(android.app.Fragment.class);
+        try {// TODO 14以下不存在android.app.Fragment
+            IGNORED.add(android.app.Fragment.class);
+        } catch (Throwable ignored) {
+        }
         try {
             IGNORED.add(Class.forName("android.support.v4.app.Fragment"));
             IGNORED.add(Class.forName("android.support.v4.app.FragmentActivity"));

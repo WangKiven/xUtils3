@@ -15,18 +15,32 @@ public class FileUtil {
     }
 
     public static File getCacheDir(String dirName) {
-        File result;
+        File result = null;
+
+        // TODO 多做路径检测
         if (existsSdcard()) {
             File cacheDir = x.app().getExternalCacheDir();
-            if (cacheDir == null) {
+            if (cacheDir != null) {
+                result = new File(cacheDir, dirName);
+            }
+
+            if (result == null || ((!result.exists()) && !result.mkdirs())) {
+                result = new File(Environment.getExternalStorageDirectory(),
+                    "Android/data/" + x.app().getPackageName() + "/cache/" + dirName);
+            }
+
+            /*if (cacheDir == null) {
                 result = new File(Environment.getExternalStorageDirectory(),
                         "Android/data/" + x.app().getPackageName() + "/cache/" + dirName);
             } else {
                 result = new File(cacheDir, dirName);
-            }
-        } else {
+            }*/
+        }
+
+        if (result == null || ((!result.exists()) && !result.mkdirs())) {
             result = new File(x.app().getCacheDir(), dirName);
         }
+
         if (result.exists() || result.mkdirs()) {
             return result;
         } else {
