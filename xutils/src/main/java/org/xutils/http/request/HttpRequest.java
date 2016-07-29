@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
@@ -318,6 +319,17 @@ public class HttpRequest extends UriRequest {
         if (connection != null && inputStream == null) {
             inputStream = connection.getResponseCode() >= 400 ?
                     connection.getErrorStream() : connection.getInputStream();
+
+            // TODO 添加GZIP解析
+            String contentEncoding = connection.getContentEncoding();
+            if (contentEncoding != null && contentEncoding.length() > 0) {
+                if (contentEncoding.contains("gzip") || contentEncoding.contains("GZIP")) {
+                    if (!(inputStream instanceof GZIPInputStream)) {
+                        inputStream = new GZIPInputStream(inputStream);
+                    }
+                }
+            }
+
         }
         return inputStream;
     }
