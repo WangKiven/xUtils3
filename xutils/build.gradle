@@ -1,5 +1,5 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
+//apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
 def siteUrl = 'https://github.com/wyouflf/xUtils3'
@@ -9,7 +9,7 @@ version = "3.3.36"
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    buildToolsVersion '24.0.3'
 
     defaultConfig {
         minSdkVersion 9
@@ -38,7 +38,7 @@ project.tasks.withType(JavaCompile) { task ->
     }*/
 }
 
-install {
+/*install {
     repositories.mavenInstaller {
         // This generates POM.xml with proper parameters
         pom {
@@ -73,7 +73,7 @@ install {
             }
         }
     }
-}
+}*/
 
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
