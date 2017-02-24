@@ -43,7 +43,7 @@ public class ImageOptions {
     private int failureDrawableId = 0;
     private Drawable loadingDrawable = null;
     private Drawable failureDrawable = null;
-    private boolean forceLoadingDrawable = true;
+    private boolean forceLoadingDrawable = true;//必须显示加载中图标，如果没有加载中图标，显示为空白
 
     private ImageView.ScaleType placeholderScaleType = ImageView.ScaleType.CENTER_INSIDE;
     private ImageView.ScaleType imageScaleType = ImageView.ScaleType.CENTER_CROP;
