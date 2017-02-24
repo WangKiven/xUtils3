@@ -24,7 +24,7 @@ public class RequestParams extends BaseParams {
 
     // 注解及其扩展参数
     private HttpRequest httpRequest;
-    private final String uri;
+    private String uri;
     private final String[] signs;
     private final String[] cacheKeys;
     private ParamsBuilder builder;
@@ -41,6 +41,7 @@ public class RequestParams extends BaseParams {
     private Executor executor; // 自定义线程池
     private Priority priority = Priority.DEFAULT; // 请求优先级
     private int connectTimeout = 1000 * 15; // 连接超时时间
+    private int readTimeout = 1000 * 15; // 读取超时时间
     private boolean autoResume = true; // 是否在下载是自动断点续传
     private boolean autoRename = false; // 是否根据头信息自动命名文件
     private int maxRetryCount = 2; // 最大请求错误重试次数
@@ -116,6 +117,14 @@ public class RequestParams extends BaseParams {
         return TextUtils.isEmpty(buildUri) ? uri : buildUri;
     }
 
+    public void setUri(String uri){
+        if(TextUtils.isEmpty(buildUri)){
+            this.uri = uri;
+        }else {
+            this.buildUri = uri;
+        }
+    }
+
     public String getCacheKey() {
         if (TextUtils.isEmpty(buildCacheKey) && builder != null) {
             HttpRequest httpRequest = this.getHttpRequest();
@@ -177,6 +186,14 @@ public class RequestParams extends BaseParams {
     public void setConnectTimeout(int connectTimeout) {
         if (connectTimeout > 0) {
             this.connectTimeout = connectTimeout;
+        }
+    }
+
+    public int getReadTimeout(){return readTimeout;}
+
+    public void setReadTimeout(int readTimeout){
+        if(readTimeout > 0){
+            this.readTimeout = readTimeout;
         }
     }
 
