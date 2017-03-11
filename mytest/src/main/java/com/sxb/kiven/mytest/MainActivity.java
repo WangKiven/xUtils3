@@ -156,6 +156,8 @@ public class MainActivity extends AppCompatActivity
                 break;
             case R.id.button2:
 
+                startActivity(new Intent(this, ImageActivity.class));
+
                 break;
             case R.id.button3:
                 /*Intent imageIntent = new Intent();
