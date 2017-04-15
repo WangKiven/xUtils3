@@ -63,14 +63,11 @@ public class ImageActivity extends AppCompatActivity {
     }
 
     private void loadImage() {
-        RequestParams params = new RequestParams("http://image.baidu.com/data/imgs?col=美女&tag=小清新&sort=0&pn=0&rn=30&p=channel&from=1");
+        RequestParams params = new RequestParams("https://image.baidu.com/data/imgs?col=美女&tag=全部&sort=0&pn=0&rn=30&p=channel&from=1");
         x.http().get(params, new Callback.CommonCallback<String>() {
             @Override
             public void onSuccess(String result) {
-                imgUrls.addAll(getImgSrcList(/*"http", "jpg", */result));
-                /*imgUrls.addAll(getImgSrcList("https", "jpg", result));
-                imgUrls.addAll(getImgSrcList("http", "png", result));
-                imgUrls.addAll(getImgSrcList("https", "png", result));*/
+                imgUrls.addAll(getImgSrcList(result));
                 myAdapter.notifyDataSetChanged();
 
                 Toast.makeText(ImageActivity.this, "加载完成", Toast.LENGTH_LONG).show();
@@ -96,17 +93,16 @@ public class ImageActivity extends AppCompatActivity {
     /**
      * 得到网页中图片的地址
      */
-    public List<String> getImgSrcList(/*String start, String end, */String htmlStr) {
+    public List<String> getImgSrcList(String htmlStr) {
         List<String> pics = new ArrayList<String>();
 
-        String regEx_img = /*start + */"http(s{0,1})://(.*?).(jpg|png)"/* + end*/; // 图片链接地址
+        String regEx_img = "http(s{0,1})://(.*?).(jpg|png)"; // 图片链接地址
         Pattern p_image = Pattern.compile(regEx_img);
         Matcher m_image = p_image.matcher(htmlStr);
         while (m_image.find()) {
             String src = m_image.group(0);
             if (src.length() < 100) {
                 pics.add(src);
-                //pics.add("http://f.hiphotos.baidu.com/zhidao/pic/item/2fdda3cc7cd98d104cc21595203fb80e7bec907b.jpg");
             }
         }
         return pics;
