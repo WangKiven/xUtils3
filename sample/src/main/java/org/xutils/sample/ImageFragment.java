@@ -74,6 +74,7 @@ public class ImageFragment extends BaseFragment {
     private void onImageItemClick(AdapterView<?> parent, View view, int position, long id) {
         Intent intent = new Intent(this.getActivity(), BigImageActivity.class);
         intent.putExtra("url", imageListAdapter.getItem(position).toString());
+        intent.putStringArrayListExtra("strList", new ArrayList<String>());
         this.getActivity().startActivity(intent);
     }
 

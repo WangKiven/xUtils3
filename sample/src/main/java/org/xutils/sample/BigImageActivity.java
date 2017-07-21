@@ -5,14 +5,23 @@ import android.widget.ImageView;
 
 import org.xutils.image.ImageOptions;
 import org.xutils.view.annotation.ContentView;
+import org.xutils.view.annotation.ExtraInject;
 import org.xutils.view.annotation.ViewInject;
 import org.xutils.x;
+
+import java.util.ArrayList;
 
 @ContentView(R.layout.activity_big_image)
 public class BigImageActivity extends BaseActivity {
 
     @ViewInject(R.id.iv_big_img)
     private ImageView iv_big_img;
+
+    @ExtraInject("url")
+    String url;
+
+    @ExtraInject("strList")
+    ArrayList<String> strList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,7 +37,8 @@ public class BigImageActivity extends BaseActivity {
                         //.setUseMemCache(false)
                 .setImageScaleType(ImageView.ScaleType.CENTER).build();
 
-        x.image().bind(iv_big_img, getIntent().getStringExtra("url"), imageOptions);
+//        x.image().bind(iv_big_img, getIntent().getStringExtra("url"), imageOptions);
+        x.image().bind(iv_big_img, url, imageOptions);
 
         // assets file
         //x.image().bind(iv_big_img, "assets://test.gif", imageOptions);

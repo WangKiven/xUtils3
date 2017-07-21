@@ -24,6 +24,7 @@ import org.xutils.ViewInjector;
 import org.xutils.common.util.LogUtil;
 import org.xutils.view.annotation.ContentView;
 import org.xutils.view.annotation.Event;
+import org.xutils.view.annotation.ExtraInject;
 import org.xutils.view.annotation.ViewInject;
 import org.xutils.x;
 
@@ -171,6 +172,28 @@ public final class ViewInjectorImpl implements ViewInjector {
                         }
                     } catch (Throwable ex) {
                         LogUtil.e(ex.getMessage(), ex);
+                    }
+                } else {// Intent 值
+                    ExtraInject extraInject = field.getAnnotation(ExtraInject.class);
+                    if (extraInject != null) {
+                        try {
+                            Object extraObj = finder.getExtra(extraInject.value(), field);
+                            if (extraObj != null) {
+                                field.setAccessible(true);
+                                field.set(handler, extraObj);
+                            }  else {
+                                String message = "Invalid @ExtraInject for "
+                                        + handlerType.getSimpleName() + "." + field.getName();
+
+                                if (extraInject.option()) {//允许null
+                                    LogUtil.w(message);
+                                } else {
+                                    throw new RuntimeException(message);
+                                }
+                            }
+                        } catch (Throwable ex) {
+                            LogUtil.e(ex.getMessage(), ex);
+                        }
                     }
                 }
             }
