@@ -41,10 +41,11 @@ public class InjectActivity extends AppCompatActivity {
         fragment.setArguments(bundle);
         getSupportFragmentManager().beginTransaction().add(R.id.ll_content, fragment).commit();
 
-        tv.setText("这个界面是测试注解的：" +
+        tv.setText("这个界面是测试补充注解的：" +
                 "\n1.上个界面传过来的Intent参数，在activity中通过注解解析" +
                 "\n2.上个界面传过来的Intent参数，在fragment中通过注解解析" +
-                "\n3.activity传递arguments参数给fragment,fragment通过注解解析");
+                "\n3.activity传递arguments参数给fragment,fragment通过注解解析" +
+                "\n\n使用注解：@IntentInject和@ArguInject");
     }
 
     @Event(R.id.btn_test1)
