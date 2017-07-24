@@ -272,4 +272,14 @@ public class HttpFragment extends BaseFragment {
         });
     }
 
+    /**
+     * intent注解测试
+     * @param view
+     */
+    @Event(value = R.id.btn_test6)
+    private void onTest6Click(View view) {
+        Intent intent = new Intent(getActivity(), InjectActivity.class);
+        intent.putExtra("text", "Hello Inject for xutils3");
+        startActivity(intent);
+    }
 }

@@ -1,6 +1,7 @@
 package org.xutils.view;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -8,6 +9,8 @@ import android.view.View;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -20,10 +23,16 @@ import java.util.ArrayList;
 /*package*/ final class ViewFinder {
 
     private View view;
+    private Object fragment;
     private Activity activity;
 
     public ViewFinder(View view) {
         this.view = view;
+    }
+
+    public ViewFinder(View view, Object fragment) {
+        this.view = view;
+        this.fragment = fragment;
     }
 
     public ViewFinder(Activity activity) {
@@ -58,58 +67,158 @@ import java.util.ArrayList;
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public Object getExtra(String name, Field field) {
-        if (activity != null) {
-            Intent intent = activity.getIntent();
-            if (intent != null && intent.hasExtra(name)) {
-
-                Class tClass = field.getType();
-
-                if (tClass.isAssignableFrom(int.class) || tClass.isAssignableFrom(Integer.class)) {
-                    return intent.getIntExtra(name, 0);
-                } else if (tClass.isAssignableFrom(long.class) || tClass.isAssignableFrom(Long.class)) {
-                    return intent.getLongExtra(name, 0);
-                } else if (tClass.isAssignableFrom(float.class) || tClass.isAssignableFrom(Float.class)) {
-                    return intent.getFloatExtra(name, 0);
-                } else if (tClass.isAssignableFrom(double.class) || tClass.isAssignableFrom(Double.class)) {
-                    return intent.getDoubleExtra(name, 0);
-                } else if (tClass.isAssignableFrom(boolean.class) || tClass.isAssignableFrom(Boolean.class)) {
-                    return intent.getBooleanExtra(name, false);
-                } else if (tClass.isAssignableFrom(String.class)) {
-                    return intent.getStringExtra(name);
-                } else if (tClass.isAssignableFrom(Bundle.class)){
-                    return intent.getBundleExtra(name);
-                } else if (tClass.isAssignableFrom(Parcelable.class)) {
-                    return intent.getParcelableExtra(name);
-                } else if (tClass.isAssignableFrom(Serializable.class)) {
-                    return intent.getSerializableExtra(name);
-                } else if (tClass.isAssignableFrom(ArrayList.class)){//arraylist
-                    /*return intent.getParcelableArrayListExtra(name);*/
-                    Type t = field.getGenericType();
-
-                    if (ParameterizedType.class.isAssignableFrom(t.getClass())) {
-                        Type[] types = ((ParameterizedType) t).getActualTypeArguments();
-                        if (types != null && types.length > 0) {
-                            Class gClass = (Class) types[0];
-
-                            if (gClass.isAssignableFrom(String.class)) {
-                                return intent.getStringArrayListExtra(name);
-                            } else if (gClass.isAssignableFrom(Parcelable.class)) {
-                                return intent.getParcelableArrayListExtra(name);
-                            } else if (gClass.isAssignableFrom(Serializable.class)) {
-                                return intent.getSerializableExtra(name);
-                            } else if (gClass.isAssignableFrom(Integer.class)) {
-                                return intent.getIntegerArrayListExtra(name);
-                            } else if (gClass.isAssignableFrom(CharSequence.class)) {
-                                return intent.getCharSequenceArrayListExtra(name);
-                            }
+        Intent intent = null;
+        if (activity == null) {
+            if (fragment == null) {
+                if (view != null) {
+                    Context context = view.getContext();
+                    if (context instanceof Activity) {
+                        intent = ((Activity) context).getIntent();
+                    }
+                }
+            } else {
+                try {
+                    Method method = fragment.getClass().getMethod("getActivity");
+                    if (method != null) {
+                        Activity activity = (Activity) method.invoke(fragment);
+                        if (activity != null) {
+                            intent = activity.getIntent();
                         }
                     }
+                } catch (NoSuchMethodException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            intent = activity.getIntent();
+        }
 
-                } else if (tClass.isAssignableFrom(int[].class)) {
-                    return intent.getIntArrayExtra(name);
-                }// todo 还有一些，用时再加
+
+
+        if (intent != null && intent.hasExtra(name)) {
+
+            Class tClass = field.getType();
+
+            if (tClass.isAssignableFrom(int.class) || tClass.isAssignableFrom(Integer.class)) {
+                return intent.getIntExtra(name, 0);
+            } else if (tClass.isAssignableFrom(long.class) || tClass.isAssignableFrom(Long.class)) {
+                return intent.getLongExtra(name, 0);
+            } else if (tClass.isAssignableFrom(float.class) || tClass.isAssignableFrom(Float.class)) {
+                return intent.getFloatExtra(name, 0);
+            } else if (tClass.isAssignableFrom(double.class) || tClass.isAssignableFrom(Double.class)) {
+                return intent.getDoubleExtra(name, 0);
+            } else if (tClass.isAssignableFrom(boolean.class) || tClass.isAssignableFrom(Boolean.class)) {
+                return intent.getBooleanExtra(name, false);
+            } else if (tClass.isAssignableFrom(String.class)) {
+                return intent.getStringExtra(name);
+            } else if (tClass.isAssignableFrom(Bundle.class)){
+                return intent.getBundleExtra(name);
+            } else if (tClass.isAssignableFrom(Parcelable.class)) {
+                return intent.getParcelableExtra(name);
+            } else if (tClass.isAssignableFrom(Serializable.class)) {
+                return intent.getSerializableExtra(name);
+            } else if (tClass.isAssignableFrom(ArrayList.class)){//arraylist
+                    /*return intent.getParcelableArrayListExtra(name);*/
+                Type t = field.getGenericType();
+
+                if (ParameterizedType.class.isAssignableFrom(t.getClass())) {
+                    Type[] types = ((ParameterizedType) t).getActualTypeArguments();
+                    if (types != null && types.length > 0) {
+                        Class gClass = (Class) types[0];
+
+                        if (gClass.isAssignableFrom(String.class)) {
+                            return intent.getStringArrayListExtra(name);
+                        } else if (gClass.isAssignableFrom(Parcelable.class)) {
+                            return intent.getParcelableArrayListExtra(name);
+                        } else if (gClass.isAssignableFrom(Serializable.class)) {
+                            return intent.getSerializableExtra(name);
+                        } else if (gClass.isAssignableFrom(Integer.class)) {
+                            return intent.getIntegerArrayListExtra(name);
+                        } else if (gClass.isAssignableFrom(CharSequence.class)) {
+                            return intent.getCharSequenceArrayListExtra(name);
+                        }
+                    }
+                }
+
+            } else if (tClass.isAssignableFrom(int[].class)) {
+                return intent.getIntArrayExtra(name);
+            }// todo 还有一些，用时再加
+        }
+
+        return null;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Object getArgu(String name, Field field) {
+        Bundle intent = null;
+        if (fragment != null) {
+            try {
+                Method method = fragment.getClass().getMethod("getArguments");
+                if (method != null) {
+                    intent = (Bundle) method.invoke(fragment);
+                }
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
             }
         }
+
+        if (intent != null && intent.containsKey(name)) {
+
+            Class tClass = field.getType();
+
+            if (tClass.isAssignableFrom(int.class) || tClass.isAssignableFrom(Integer.class)) {
+                return intent.getInt(name, 0);
+            } else if (tClass.isAssignableFrom(long.class) || tClass.isAssignableFrom(Long.class)) {
+                return intent.getLong(name, 0);
+            } else if (tClass.isAssignableFrom(float.class) || tClass.isAssignableFrom(Float.class)) {
+                return intent.getFloat(name, 0);
+            } else if (tClass.isAssignableFrom(double.class) || tClass.isAssignableFrom(Double.class)) {
+                return intent.getDouble(name, 0);
+            } else if (tClass.isAssignableFrom(boolean.class) || tClass.isAssignableFrom(Boolean.class)) {
+                return intent.getBoolean(name, false);
+            } else if (tClass.isAssignableFrom(String.class)) {
+                return intent.getString(name);
+            } else if (tClass.isAssignableFrom(Bundle.class)){
+                return intent.getBundle(name);
+            } else if (tClass.isAssignableFrom(Parcelable.class)) {
+                return intent.getParcelable(name);
+            } else if (tClass.isAssignableFrom(Serializable.class)) {
+                return intent.getSerializable(name);
+            } else if (tClass.isAssignableFrom(ArrayList.class)){//arraylist
+                Type t = field.getGenericType();
+
+                if (ParameterizedType.class.isAssignableFrom(t.getClass())) {
+                    Type[] types = ((ParameterizedType) t).getActualTypeArguments();
+                    if (types != null && types.length > 0) {
+                        Class gClass = (Class) types[0];
+
+                        if (gClass.isAssignableFrom(String.class)) {
+                            return intent.getStringArrayList(name);
+                        } else if (gClass.isAssignableFrom(Parcelable.class)) {
+                            return intent.getParcelableArrayList(name);
+                        } else if (gClass.isAssignableFrom(Serializable.class)) {
+                            return intent.getSerializable(name);
+                        } else if (gClass.isAssignableFrom(Integer.class)) {
+                            return intent.getIntegerArrayList(name);
+                        } else if (gClass.isAssignableFrom(CharSequence.class)) {
+                            return intent.getCharSequenceArrayList(name);
+                        }
+                    }
+                }
+
+            } else if (tClass.isAssignableFrom(int[].class)) {
+                return intent.getIntArray(name);
+            }// todo 还有一些，用时再加
+        }
+
         return null;
     }
 

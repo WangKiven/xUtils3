@@ -5,7 +5,7 @@ import android.widget.ImageView;
 
 import org.xutils.image.ImageOptions;
 import org.xutils.view.annotation.ContentView;
-import org.xutils.view.annotation.ExtraInject;
+import org.xutils.view.annotation.IntentInject;
 import org.xutils.view.annotation.ViewInject;
 import org.xutils.x;
 
@@ -17,10 +17,10 @@ public class BigImageActivity extends BaseActivity {
     @ViewInject(R.id.iv_big_img)
     private ImageView iv_big_img;
 
-    @ExtraInject("url")
+    @IntentInject("url")
     String url;
 
-    @ExtraInject("strList")
+    @IntentInject("strList")
     ArrayList<String> strList;
 
     @Override

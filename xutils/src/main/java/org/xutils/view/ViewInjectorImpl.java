@@ -22,9 +22,10 @@ import android.view.ViewGroup;
 
 import org.xutils.ViewInjector;
 import org.xutils.common.util.LogUtil;
+import org.xutils.view.annotation.ArguInject;
 import org.xutils.view.annotation.ContentView;
 import org.xutils.view.annotation.Event;
-import org.xutils.view.annotation.ExtraInject;
+import org.xutils.view.annotation.IntentInject;
 import org.xutils.view.annotation.ViewInject;
 import org.xutils.x;
 
@@ -116,7 +117,7 @@ public final class ViewInjectorImpl implements ViewInjector {
         }
 
         // inject res & event
-        injectObject(fragment, handlerType, new ViewFinder(view));
+        injectObject(fragment, handlerType, new ViewFinder(view, fragment));
 
         return view;
     }
@@ -158,9 +159,8 @@ public final class ViewInjectorImpl implements ViewInjector {
                 /* 不注入数组类型字段 */  fieldType.isArray()) {
                     continue;
                 }
-
-                ViewInject viewInject = field.getAnnotation(ViewInject.class);
-                if (viewInject != null) {
+                if (field.isAnnotationPresent(ViewInject.class)) {
+                    ViewInject viewInject = field.getAnnotation(ViewInject.class);
                     try {
                         View view = finder.findViewById(viewInject.value(), viewInject.parentId());
                         if (view != null) {
@@ -173,29 +173,52 @@ public final class ViewInjectorImpl implements ViewInjector {
                     } catch (Throwable ex) {
                         LogUtil.e(ex.getMessage(), ex);
                     }
-                } else {// Intent 值
-                    ExtraInject extraInject = field.getAnnotation(ExtraInject.class);
-                    if (extraInject != null) {
-                        try {
-                            Object extraObj = finder.getExtra(extraInject.value(), field);
-                            if (extraObj != null) {
-                                field.setAccessible(true);
-                                field.set(handler, extraObj);
-                            }  else {
-                                String message = "Invalid @ExtraInject for "
-                                        + handlerType.getSimpleName() + "." + field.getName();
+                } else if (field.isAnnotationPresent(IntentInject.class)) {
+                    IntentInject intentInject = field.getAnnotation(IntentInject.class);
+                    try {
+                        Object extraObj = finder.getExtra(intentInject.value(), field);
+                        if (extraObj != null) {
+                            field.setAccessible(true);
+                            field.set(handler, extraObj);
+                        } else {
+                            String message = "Invalid @ExtraInject for "
+                                    + handlerType.getSimpleName() + "." + field.getName();
 
-                                if (extraInject.option()) {//允许null
-                                    LogUtil.w(message);
-                                } else {
-                                    throw new RuntimeException(message);
-                                }
+                            if (intentInject.option()) {//允许null
+                                LogUtil.w(message);
+                            } else {
+                                throw new RuntimeException(message);
                             }
-                        } catch (Throwable ex) {
-                            LogUtil.e(ex.getMessage(), ex);
                         }
+                    } catch (Throwable ex) {
+                        LogUtil.e(ex.getMessage(), ex);
+                    }
+                } else if (field.isAnnotationPresent(ArguInject.class)) {
+                    ArguInject arguInject = field.getAnnotation(ArguInject.class);
+                    try {
+                        Object arguObj = finder.getArgu(arguInject.value(), field);
+                        if (arguObj != null) {
+                            field.setAccessible(true);
+                            field.set(handler, arguObj);
+                        } else {
+                            String message = "Invalid @ArguInject for "
+                                    + handlerType.getSimpleName() + "." + field.getName();
+
+                            if (arguInject.option()) {//允许null
+                                LogUtil.w(message);
+                            } else {
+                                throw new RuntimeException(message);
+                            }
+                        }
+                    } catch (Throwable ex) {
+                        LogUtil.e(ex.getMessage(), ex);
                     }
                 }
+                /*if (viewInject != null) {
+                } else {// Intent 值
+                    if (intentInject != null) {
+                    }
+                }*/
             }
         } // end inject view
 
