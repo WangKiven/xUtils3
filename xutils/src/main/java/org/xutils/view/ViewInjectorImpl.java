@@ -228,7 +228,7 @@ public final class ViewInjectorImpl implements ViewInjector {
             for (Method method : methods) {
 
                 if (Modifier.isStatic(method.getModifiers())
-                        /*|| !Modifier.isPrivate(method.getModifiers())*/) {
+                        /*敬私有方法能通过*//*|| !Modifier.isPrivate(method.getModifiers())*/) {
                     continue;
                 }
 
