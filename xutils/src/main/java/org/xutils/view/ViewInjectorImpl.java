@@ -154,9 +154,9 @@ public final class ViewInjectorImpl implements ViewInjector {
                 Class<?> fieldType = field.getType();
                 if (
                 /* 不注入静态字段 */     Modifier.isStatic(field.getModifiers()) ||
-                /* 不注入final字段 */    Modifier.isFinal(field.getModifiers()) ||
-                /* 不注入基本类型字段 */  fieldType.isPrimitive() ||
-                /* 不注入数组类型字段 */  fieldType.isArray()) {
+                /* 不注入final字段 */    Modifier.isFinal(field.getModifiers())/* ||*/
+                /* 不注入基本类型字段 */  /*fieldType.isPrimitive() ||*/
+                /* 不注入数组类型字段 */  /*fieldType.isArray()*/) {
                     continue;
                 }
                 if (field.isAnnotationPresent(ViewInject.class)) {
@@ -228,7 +228,7 @@ public final class ViewInjectorImpl implements ViewInjector {
             for (Method method : methods) {
 
                 if (Modifier.isStatic(method.getModifiers())
-                        || !Modifier.isPrivate(method.getModifiers())) {
+                        /*|| !Modifier.isPrivate(method.getModifiers())*/) {
                     continue;
                 }
 

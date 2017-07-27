@@ -50,6 +50,6 @@ public class InjectActivity extends AppCompatActivity {
 
     @Event(R.id.btn_test1)
     private void clickTest1(View view) {
-        new AlertDialog.Builder(this).setMessage("text = " + text + "/nhahaha = " + haha).show();
+        new AlertDialog.Builder(this).setMessage("text = " + text + "\nhaha = " + haha).show();
     }
 }
