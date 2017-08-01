@@ -96,7 +96,7 @@ public final class ViewInjectorImpl implements ViewInjector {
 
     @Override
     public void inject(Object handler, View view) {
-        injectObject(handler, handler.getClass(), new ViewFinder(view));
+        injectObject(handler, handler.getClass(), new ViewFinder(view, handler));
     }
 
     @Override
