@@ -98,30 +98,29 @@ import java.util.ArrayList;
         }
 
 
-
         if (intent != null && intent.hasExtra(name)) {
 
             Class tClass = field.getType();
 
-            if (tClass.isAssignableFrom(int.class) || tClass.isAssignableFrom(Integer.class)) {
+            if (int.class.isAssignableFrom(tClass) || Integer.class.isAssignableFrom(tClass)) {
                 return intent.getIntExtra(name, 0);
-            } else if (tClass.isAssignableFrom(long.class) || tClass.isAssignableFrom(Long.class)) {
+            } else if (long.class.isAssignableFrom(tClass) || Long.class.isAssignableFrom(tClass)) {
                 return intent.getLongExtra(name, 0);
-            } else if (tClass.isAssignableFrom(float.class) || tClass.isAssignableFrom(Float.class)) {
+            } else if (float.class.isAssignableFrom(tClass) || Float.class.isAssignableFrom(tClass)) {
                 return intent.getFloatExtra(name, 0);
-            } else if (tClass.isAssignableFrom(double.class) || tClass.isAssignableFrom(Double.class)) {
+            } else if (double.class.isAssignableFrom(tClass) || Double.class.isAssignableFrom(tClass)) {
                 return intent.getDoubleExtra(name, 0);
-            } else if (tClass.isAssignableFrom(boolean.class) || tClass.isAssignableFrom(Boolean.class)) {
+            } else if (boolean.class.isAssignableFrom(tClass) || Boolean.class.isAssignableFrom(tClass)) {
                 return intent.getBooleanExtra(name, false);
-            } else if (tClass.isAssignableFrom(String.class)) {
+            } else if (String.class.isAssignableFrom(tClass)) {
                 return intent.getStringExtra(name);
-            } else if (tClass.isAssignableFrom(Bundle.class)){
+            } else if (Bundle.class.isAssignableFrom(tClass)) {
                 return intent.getBundleExtra(name);
-            } else if (tClass.isAssignableFrom(Parcelable.class)) {
+            } else if (Parcelable.class.isAssignableFrom(tClass)) {
                 return intent.getParcelableExtra(name);
-            } else if (tClass.isAssignableFrom(Serializable.class)) {
+            } else if (Serializable.class.isAssignableFrom(tClass)) {
                 return intent.getSerializableExtra(name);
-            } else if (tClass.isAssignableFrom(ArrayList.class)){//arraylist
+            } else if (ArrayList.class.isAssignableFrom(tClass)) {//arraylist
                     /*return intent.getParcelableArrayListExtra(name);*/
                 Type t = field.getGenericType();
 
@@ -130,21 +129,21 @@ import java.util.ArrayList;
                     if (types != null && types.length > 0) {
                         Class gClass = (Class) types[0];
 
-                        if (gClass.isAssignableFrom(String.class)) {
+                        if (String.class.isAssignableFrom(gClass)) {
                             return intent.getStringArrayListExtra(name);
-                        } else if (gClass.isAssignableFrom(Parcelable.class)) {
+                        } else if (Parcelable.class.isAssignableFrom(gClass)) {
                             return intent.getParcelableArrayListExtra(name);
-                        } else if (gClass.isAssignableFrom(Serializable.class)) {
+                        } else if (Serializable.class.isAssignableFrom(gClass)) {
                             return intent.getSerializableExtra(name);
-                        } else if (gClass.isAssignableFrom(Integer.class)) {
+                        } else if (Integer.class.isAssignableFrom(gClass)) {
                             return intent.getIntegerArrayListExtra(name);
-                        } else if (gClass.isAssignableFrom(CharSequence.class)) {
+                        } else if (CharSequence.class.isAssignableFrom(gClass)) {
                             return intent.getCharSequenceArrayListExtra(name);
                         }
                     }
                 }
 
-            } else if (tClass.isAssignableFrom(int[].class)) {
+            } else if (int[].class.isAssignableFrom(tClass)) {
                 return intent.getIntArrayExtra(name);
             }// todo 还有一些，用时再加
         }
@@ -174,25 +173,25 @@ import java.util.ArrayList;
 
             Class tClass = field.getType();
 
-            if (tClass.isAssignableFrom(int.class) || tClass.isAssignableFrom(Integer.class)) {
+            if (int.class.isAssignableFrom(tClass) || Integer.class.isAssignableFrom(tClass)) {
                 return intent.getInt(name, 0);
-            } else if (tClass.isAssignableFrom(long.class) || tClass.isAssignableFrom(Long.class)) {
+            } else if (long.class.isAssignableFrom(tClass) || Long.class.isAssignableFrom(tClass)) {
                 return intent.getLong(name, 0);
-            } else if (tClass.isAssignableFrom(float.class) || tClass.isAssignableFrom(Float.class)) {
+            } else if (float.class.isAssignableFrom(tClass) || Float.class.isAssignableFrom(tClass)) {
                 return intent.getFloat(name, 0);
-            } else if (tClass.isAssignableFrom(double.class) || tClass.isAssignableFrom(Double.class)) {
+            } else if (double.class.isAssignableFrom(tClass) || Double.class.isAssignableFrom(tClass)) {
                 return intent.getDouble(name, 0);
-            } else if (tClass.isAssignableFrom(boolean.class) || tClass.isAssignableFrom(Boolean.class)) {
+            } else if (boolean.class.isAssignableFrom(tClass) || Boolean.class.isAssignableFrom(tClass)) {
                 return intent.getBoolean(name, false);
-            } else if (tClass.isAssignableFrom(String.class)) {
+            } else if (String.class.isAssignableFrom(tClass)) {
                 return intent.getString(name);
-            } else if (tClass.isAssignableFrom(Bundle.class)){
+            } else if (Bundle.class.isAssignableFrom(tClass)) {
                 return intent.getBundle(name);
-            } else if (tClass.isAssignableFrom(Parcelable.class)) {
+            } else if (Parcelable.class.isAssignableFrom(tClass)) {
                 return intent.getParcelable(name);
-            } else if (tClass.isAssignableFrom(Serializable.class)) {
+            } else if (Serializable.class.isAssignableFrom(tClass)) {
                 return intent.getSerializable(name);
-            } else if (tClass.isAssignableFrom(ArrayList.class)){//arraylist
+            } else if (ArrayList.class.isAssignableFrom(tClass)) {//arraylist
                 Type t = field.getGenericType();
 
                 if (ParameterizedType.class.isAssignableFrom(t.getClass())) {
@@ -200,21 +199,21 @@ import java.util.ArrayList;
                     if (types != null && types.length > 0) {
                         Class gClass = (Class) types[0];
 
-                        if (gClass.isAssignableFrom(String.class)) {
+                        if (String.class.isAssignableFrom(gClass)) {
                             return intent.getStringArrayList(name);
-                        } else if (gClass.isAssignableFrom(Parcelable.class)) {
+                        } else if (Parcelable.class.isAssignableFrom(gClass)) {
                             return intent.getParcelableArrayList(name);
-                        } else if (gClass.isAssignableFrom(Serializable.class)) {
+                        } else if (Serializable.class.isAssignableFrom(gClass)) {
                             return intent.getSerializable(name);
-                        } else if (gClass.isAssignableFrom(Integer.class)) {
+                        } else if (Integer.class.isAssignableFrom(gClass)) {
                             return intent.getIntegerArrayList(name);
-                        } else if (gClass.isAssignableFrom(CharSequence.class)) {
+                        } else if (CharSequence.class.isAssignableFrom(gClass)) {
                             return intent.getCharSequenceArrayList(name);
                         }
                     }
                 }
 
-            } else if (tClass.isAssignableFrom(int[].class)) {
+            } else if (int[].class.isAssignableFrom(tClass)) {
                 return intent.getIntArray(name);
             }// todo 还有一些，用时再加
         }
