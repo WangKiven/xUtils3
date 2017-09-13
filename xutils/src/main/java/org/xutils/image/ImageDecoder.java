@@ -50,7 +50,8 @@ public final class ImageDecoder {
     private final static LruDiskCache THUMB_CACHE = LruDiskCache.getDiskCache("xUtils_img_thumb");
 
     // 4.2.1+ 对于webp是完全支持的(包含半透明的webp图)
-    private static final boolean supportWebP = Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN;
+    // 5.0以下一些设备webp出现黑色背景
+    private static final boolean supportWebP = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
 
     static {
         int cpuCount = Runtime.getRuntime().availableProcessors();
