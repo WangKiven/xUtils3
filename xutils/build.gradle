@@ -39,6 +39,15 @@ android {
     }
 }
 
+uploadArchives {
+    repositories {
+        flatDir {
+            name 'pcLocal'
+            dir "$parent.rootDir/maven/aars"
+        }
+    }
+}
+
 install {
     repositories.mavenInstaller {
         // This generates POM.xml with proper parameters
