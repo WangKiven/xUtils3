@@ -8,12 +8,12 @@ group = "org.xutils"
 version = "3.5.0"
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion '25.0.3'
+    compileSdkVersion parent.ext.compileSdkVersion
+    buildToolsVersion parent.ext.buildToolsVersion
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 25
+        targetSdkVersion parent.ext.targetSdkVersion
         versionCode 20170405
         versionName version
     }
