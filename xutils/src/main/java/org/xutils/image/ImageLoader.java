@@ -7,7 +7,9 @@ import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.ThumbnailUtils;
 import android.os.Build;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.animation.Animation;
@@ -28,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Type;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
@@ -383,7 +386,19 @@ import java.util.concurrent.atomic.AtomicLong;
                 result = prepareCallback.prepare(rawData);
             }
             if (result == null) {
-                result = ImageDecoder.decodeFileWithLock(rawData, options, this);
+
+                if (rawData != null) {
+                    // 如果是video，则获取缩略图
+                    String type = URLConnection.getFileNameMap().getContentTypeFor(rawData.getName());
+                    if (type != null && type.contains("video/")) {
+                        Bitmap bmp = ThumbnailUtils.createVideoThumbnail(rawData.getAbsolutePath(), MediaStore.Video.Thumbnails.MINI_KIND);
+                        if (bmp != null) {
+                            result = new BitmapDrawable(bmp);
+                        }
+                    } else {
+                        result = ImageDecoder.decodeFileWithLock(rawData, options, this);
+                    }
+                }
             }
             if (result != null) {
                 if (result instanceof ReusableDrawable) {
