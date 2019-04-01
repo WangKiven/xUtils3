@@ -16,6 +16,7 @@
 package org.xutils.view;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,7 +43,7 @@ public final class ViewInjectorImpl implements ViewInjector {
         IGNORED.add(Object.class);
         IGNORED.add(Activity.class);
         try {// TODO 14以下不存在android.app.Fragment
-            IGNORED.add(android.app.Fragment.class);
+            IGNORED.add(Fragment.class);
         } catch (Throwable ignored) {
         }
         try {
