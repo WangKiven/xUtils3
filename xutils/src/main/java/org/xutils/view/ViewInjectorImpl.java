@@ -51,6 +51,13 @@ public final class ViewInjectorImpl implements ViewInjector {
             IGNORED.add(Class.forName("android.support.v4.app.FragmentActivity"));
         } catch (Throwable ignored) {
         }
+
+        try {//androidx
+            IGNORED.add(Class.forName("androidx.fragment.app.Fragment"));
+            IGNORED.add(Class.forName("androidx.appcompat.app.AppCompatActivity"));
+            IGNORED.add(Class.forName("androidx.fragment.app.FragmentActivity"));
+        } catch (Throwable ignored) {
+        }
     }
 
     private static final Object lock = new Object();
