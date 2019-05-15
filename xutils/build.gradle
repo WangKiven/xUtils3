@@ -102,6 +102,10 @@ artifacts {
     archives sourcesJar
 }
 Properties properties = new Properties()
+
+dependencies {
+//    implementation 'com.android.support:appcompat-v7:+'
+}
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 bintray {
     user = properties.getProperty("bintray.user")
