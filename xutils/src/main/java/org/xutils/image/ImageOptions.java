@@ -113,8 +113,10 @@ public class ImageOptions {
                     }
                 }
 
-                if (tempWidth <= 0) tempWidth = getImageViewFieldValue(view, "mMaxWidth");
-                if (tempHeight <= 0) tempHeight = getImageViewFieldValue(view, "mMaxHeight");
+//                if (tempWidth <= 0) tempWidth = getImageViewFieldValue(view, "mMaxWidth");
+//                if (tempHeight <= 0) tempHeight = getImageViewFieldValue(view, "mMaxHeight");
+                if (tempWidth <= 0) tempWidth = view.getMaxWidth();
+                if (tempHeight <= 0) tempHeight = view.getMaxHeight();
             }
 
             if (tempWidth <= 0) tempWidth = screenWidth;
@@ -274,7 +276,7 @@ public class ImageOptions {
         return sb.toString();
     }
 
-    private static int getImageViewFieldValue(ImageView view, String fieldName) {
+    /*private static int getImageViewFieldValue(ImageView view, String fieldName) {
         int value = 0;
         try {
             Field field = ImageView.class.getDeclaredField(fieldName);
@@ -286,7 +288,7 @@ public class ImageOptions {
         } catch (Throwable ignored) {
         }
         return value;
-    }
+    }*/
 
     public interface ParamsBuilder {
         RequestParams buildParams(RequestParams params, ImageOptions options);
