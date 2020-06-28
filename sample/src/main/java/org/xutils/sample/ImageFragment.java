@@ -33,11 +33,9 @@ import java.util.regex.Pattern;
 public class ImageFragment extends BaseFragment {
 
     private String[] imgSites = {
-            "http://image.baidu.com/",
-            "http://www.22mm.cc/",
-            "http://www.moko.cc/",
-            "http://eladies.sina.com.cn/photo/",
-            "http://www.youzi4.com/"
+            "http://m.haopic.me/touxiang",
+            "http://m.haopic.me/touxiang/page/2",
+            "http://m.haopic.me"
     };
 
     ImageOptions imageOptions;
@@ -79,6 +77,10 @@ public class ImageFragment extends BaseFragment {
     }
 
     private void loadImgList(String url) {
+        RequestParams params = new RequestParams(url);
+        params.setUseCookie(true);
+        // 随意找的图片, 模拟浏览器UA, 防止被屏蔽
+        params.setHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36 OPR/63.0.3368.94");
         x.http().get(new RequestParams(url), new Callback.CommonCallback<String>() {
             @Override
             public void onSuccess(String result) {
@@ -186,7 +188,9 @@ public class ImageFragment extends BaseFragment {
 
         @Override
         public void onLoading(long total, long current, boolean isDownloading) {
-            this.holder.imgPb.setProgress((int) (current * 100 / total));
+            if (total > 0) {
+                this.holder.imgPb.setProgress((int) (current * 100 / total));
+            }
         }
 
         @Override
@@ -225,6 +229,18 @@ public class ImageFragment extends BaseFragment {
                 //pics.add("http://f.hiphotos.baidu.com/zhidao/pic/item/2fdda3cc7cd98d104cc21595203fb80e7bec907b.jpg");
             }
         }
+
+        regEx_img = "<img.*?src=\"//(.*?).jpg\""; // 图片链接地址
+        p_image = Pattern.compile(regEx_img, Pattern.CASE_INSENSITIVE);
+        m_image = p_image.matcher(htmlStr);
+        while (m_image.find()) {
+            String src = m_image.group(1);
+            if (src.length() < 100) {
+                pics.add("http://" + src + ".jpg");
+                //pics.add("http://f.hiphotos.baidu.com/zhidao/pic/item/2fdda3cc7cd98d104cc21595203fb80e7bec907b.jpg");
+            }
+        }
+
         return pics;
     }
 

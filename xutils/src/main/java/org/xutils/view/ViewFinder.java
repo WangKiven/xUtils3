@@ -64,7 +64,6 @@ import java.util.ArrayList;
         return view;
     }
 
-
     @SuppressWarnings({"unchecked", "rawtypes"})
     public Object getExtra(String name, Field field) {
         Intent intent = null;
@@ -220,10 +219,4 @@ import java.util.ArrayList;
 
         return null;
     }
-
-    /*public Context getContext() {
-        if (view != null) return view.getContext();
-        if (activity != null) return activity;
-        return null;
-    }*/
 }

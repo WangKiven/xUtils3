@@ -21,10 +21,14 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    testImplementation 'junit:junit:4.12'
-    implementation "com.android.support:appcompat-v7:${parent.ext.libraryVersion}"
-    implementation "com.android.support:design:${parent.ext.libraryVersion}"
-    implementation "com.android.support:recyclerview-v7:${parent.ext.libraryVersion}"
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation 'com.google.android.material:material:1.1.0'
+    testImplementation 'junit:junit:4.13'
+//    implementation "com.android.support:appcompat-v7:${parent.ext.libraryVersion}"
+//    implementation "com.android.support:design:${parent.ext.libraryVersion}"
+//    implementation "com.android.support:recyclerview-v7:${parent.ext.libraryVersion}"
     implementation project(':xutils')
     implementation files('libs/gson-2.6.2.jar')
+//    implementation 'com.google.code.gson:gson:2.8.6'
 }

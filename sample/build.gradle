@@ -32,9 +32,6 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "com.android.support:support-v4:${parent.ext.libraryVersion}"
-    implementation "com.android.support:appcompat-v7:${parent.ext.libraryVersion}"
-    implementation "com.android.support:design:${parent.ext.libraryVersion}"
-    implementation "com.android.support:recyclerview-v7:${parent.ext.libraryVersion}"
+    implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation project(':xutils')
 }

@@ -16,17 +16,14 @@
 package org.xutils.view;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import org.xutils.ViewInjector;
 import org.xutils.common.util.LogUtil;
-import org.xutils.view.annotation.ArguInject;
 import org.xutils.view.annotation.ContentView;
 import org.xutils.view.annotation.Event;
-import org.xutils.view.annotation.IntentInject;
 import org.xutils.view.annotation.ViewInject;
 import org.xutils.x;
 
@@ -42,20 +39,10 @@ public final class ViewInjectorImpl implements ViewInjector {
     static {
         IGNORED.add(Object.class);
         IGNORED.add(Activity.class);
-        try {// TODO 14以下不存在android.app.Fragment
-            IGNORED.add(Fragment.class);
-        } catch (Throwable ignored) {
-        }
+        IGNORED.add(android.app.Fragment.class);
         try {
             IGNORED.add(Class.forName("android.support.v4.app.Fragment"));
             IGNORED.add(Class.forName("android.support.v4.app.FragmentActivity"));
-        } catch (Throwable ignored) {
-        }
-
-        try {//androidx
-            IGNORED.add(Class.forName("androidx.fragment.app.Fragment"));
-            IGNORED.add(Class.forName("androidx.appcompat.app.AppCompatActivity"));
-            IGNORED.add(Class.forName("androidx.fragment.app.FragmentActivity"));
         } catch (Throwable ignored) {
         }
     }
@@ -91,8 +78,7 @@ public final class ViewInjectorImpl implements ViewInjector {
             if (contentView != null) {
                 int viewId = contentView.value();
                 if (viewId > 0) {
-                    Method setContentViewMethod = handlerType.getMethod("setContentView", int.class);
-                     setContentViewMethod.invoke(activity, viewId);
+                    activity.setContentView(viewId);
                 }
             }
         } catch (Throwable ex) {
@@ -104,7 +90,7 @@ public final class ViewInjectorImpl implements ViewInjector {
 
     @Override
     public void inject(Object handler, View view) {
-        injectObject(handler, handler.getClass(), new ViewFinder(view, handler));
+        injectObject(handler, handler.getClass(), new ViewFinder(view));
     }
 
     @Override
@@ -125,7 +111,7 @@ public final class ViewInjectorImpl implements ViewInjector {
         }
 
         // inject res & event
-        injectObject(fragment, handlerType, new ViewFinder(view, fragment));
+        injectObject(fragment, handlerType, new ViewFinder(view));
 
         return view;
     }
@@ -134,7 +120,7 @@ public final class ViewInjectorImpl implements ViewInjector {
      * 从父类获取注解View
      */
     private static ContentView findContentView(Class<?> thisCls) {
-        if (thisCls == null || IGNORED.contains(thisCls)) {
+        if (thisCls == null || IGNORED.contains(thisCls) || thisCls.getName().startsWith("androidx.")) {
             return null;
         }
         ContentView contentView = thisCls.getAnnotation(ContentView.class);
@@ -147,7 +133,7 @@ public final class ViewInjectorImpl implements ViewInjector {
     @SuppressWarnings("ConstantConditions")
     private static void injectObject(Object handler, Class<?> handlerType, ViewFinder finder) {
 
-        if (handlerType == null || IGNORED.contains(handlerType)) {
+        if (handlerType == null || IGNORED.contains(handlerType) || handlerType.getName().startsWith("androidx.")) {
             return;
         }
 
@@ -161,14 +147,15 @@ public final class ViewInjectorImpl implements ViewInjector {
 
                 Class<?> fieldType = field.getType();
                 if (
-                /* 不注入静态字段 */     Modifier.isStatic(field.getModifiers()) ||
-                /* 不注入final字段 */    Modifier.isFinal(field.getModifiers())/* ||*/
-                /* 不注入基本类型字段 */  /*fieldType.isPrimitive() ||*/
-                /* 不注入数组类型字段 */  /*fieldType.isArray()*/) {
+                    /* 不注入静态字段 */     Modifier.isStatic(field.getModifiers()) ||
+                        /* 不注入final字段 */    Modifier.isFinal(field.getModifiers())/* ||*/
+                        /* 不注入基本类型字段 */  /*fieldType.isPrimitive() ||*/
+                        /* 不注入数组类型字段 */  /*fieldType.isArray()*/) {
                     continue;
                 }
-                if (field.isAnnotationPresent(ViewInject.class)) {
-                    ViewInject viewInject = field.getAnnotation(ViewInject.class);
+
+                ViewInject viewInject = field.getAnnotation(ViewInject.class);
+                if (viewInject != null) {
                     try {
                         View view = finder.findViewById(viewInject.value(), viewInject.parentId());
                         if (view != null) {
@@ -181,52 +168,7 @@ public final class ViewInjectorImpl implements ViewInjector {
                     } catch (Throwable ex) {
                         LogUtil.e(ex.getMessage(), ex);
                     }
-                } else if (field.isAnnotationPresent(IntentInject.class)) {
-                    IntentInject intentInject = field.getAnnotation(IntentInject.class);
-                    try {
-                        Object extraObj = finder.getExtra(intentInject.value(), field);
-                        if (extraObj != null) {
-                            field.setAccessible(true);
-                            field.set(handler, extraObj);
-                        } else {
-                            String message = "Invalid @ExtraInject for "
-                                    + handlerType.getSimpleName() + "." + field.getName();
-
-                            if (intentInject.option()) {//允许null
-                                LogUtil.w(message);
-                            } else {
-                                throw new RuntimeException(message);
-                            }
-                        }
-                    } catch (Throwable ex) {
-                        LogUtil.e(ex.getMessage(), ex);
-                    }
-                } else if (field.isAnnotationPresent(ArguInject.class)) {
-                    ArguInject arguInject = field.getAnnotation(ArguInject.class);
-                    try {
-                        Object arguObj = finder.getArgu(arguInject.value(), field);
-                        if (arguObj != null) {
-                            field.setAccessible(true);
-                            field.set(handler, arguObj);
-                        } else {
-                            String message = "Invalid @ArguInject for "
-                                    + handlerType.getSimpleName() + "." + field.getName();
-
-                            if (arguInject.option()) {//允许null
-                                LogUtil.w(message);
-                            } else {
-                                throw new RuntimeException(message);
-                            }
-                        }
-                    } catch (Throwable ex) {
-                        LogUtil.e(ex.getMessage(), ex);
-                    }
                 }
-                /*if (viewInject != null) {
-                } else {// Intent 值
-                    if (intentInject != null) {
-                    }
-                }*/
             }
         } // end inject view
 
@@ -236,7 +178,7 @@ public final class ViewInjectorImpl implements ViewInjector {
             for (Method method : methods) {
 
                 if (Modifier.isStatic(method.getModifiers())
-                        /*敬私有方法能通过*//*|| !Modifier.isPrivate(method.getModifiers())*/) {
+                        || !Modifier.isPrivate(method.getModifiers())) {
                     continue;
                 }
 

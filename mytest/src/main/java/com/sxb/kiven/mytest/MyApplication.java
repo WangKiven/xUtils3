@@ -25,7 +25,11 @@ public class MyApplication extends Application {
 
         x.Ext.init(this);
         x.Ext.setDebug(true);
-        dbManager = x.getDb(null);
+        try {
+            dbManager = x.getDb(new DbManager.DaoConfig());
+        } catch (DbException e) {
+            e.printStackTrace();
+        }
     }
 
     public static MyApplication getInstance(){

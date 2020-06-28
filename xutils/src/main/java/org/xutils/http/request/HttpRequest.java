@@ -1,7 +1,6 @@
 package org.xutils.http.request;
 
 import android.annotation.TargetApi;
-import android.net.Uri;
 import android.os.Build;
 import android.text.TextUtils;
 
@@ -28,9 +27,9 @@ import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -39,6 +38,7 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -58,13 +58,13 @@ public class HttpRequest extends UriRequest {
     private static final CookieManager COOKIE_MANAGER =
             new CookieManager(DbCookieStore.INSTANCE, CookiePolicy.ACCEPT_ALL);
 
-    /*package*/ HttpRequest(RequestParams params, Type loadType) throws Throwable {
+    public HttpRequest(RequestParams params, Type loadType) throws Throwable {
         super(params, loadType);
     }
 
     // build query
     @Override
-    protected String buildQueryUrl(RequestParams params) {
+    protected String buildQueryUrl(RequestParams params) throws IOException {
         String uri = params.getUri();
         StringBuilder queryBuilder = new StringBuilder(uri);
         if (!uri.contains("?")) {
@@ -76,12 +76,11 @@ public class HttpRequest extends UriRequest {
         if (queryParams != null) {
             for (KeyValue kv : queryParams) {
                 String name = kv.key;
-                String value = kv.getValueStr();
+                String value = kv.getValueStrOrNull();
                 if (!TextUtils.isEmpty(name) && value != null) {
-                    queryBuilder.append(
-                            Uri.encode(name, params.getCharset()))
+                    queryBuilder.append(URLEncoder.encode(name, params.getCharset()).replaceAll("\\+", "%20"))
                             .append("=")
-                            .append(Uri.encode(value, params.getCharset()))
+                            .append(URLEncoder.encode(value, params.getCharset()).replaceAll("\\+", "%20"))
                             .append("&");
                 }
             }
@@ -111,8 +110,6 @@ public class HttpRequest extends UriRequest {
 
     /**
      * invoke via Loader
-     *
-     * @throws IOException
      */
     @Override
     @TargetApi(Build.VERSION_CODES.KITKAT)
@@ -142,6 +139,11 @@ public class HttpRequest extends UriRequest {
                 if (sslSocketFactory != null) {
                     ((HttpsURLConnection) connection).setSSLSocketFactory(sslSocketFactory);
                 }
+
+                HostnameVerifier hostnameVerifier = params.getHostnameVerifier();
+                if (hostnameVerifier != null) {
+                    ((HttpsURLConnection) connection).setHostnameVerifier(hostnameVerifier);
+                }
             }
         }
 
@@ -163,8 +165,8 @@ public class HttpRequest extends UriRequest {
             if (headers != null) {
                 for (RequestParams.Header header : headers) {
                     String name = header.key;
-                    String value = header.getValueStr();
-                    if (!TextUtils.isEmpty(name) && !TextUtils.isEmpty(value)) {
+                    String value = header.getValueStrOrNull();
+                    if (!TextUtils.isEmpty(name)) {
                         if (header.setHeader) {
                             connection.setRequestProperty(name, value);
                         } else {
@@ -176,6 +178,9 @@ public class HttpRequest extends UriRequest {
         }
 
         // intercept response
+        if (responseParser != null) {
+            responseParser.beforeRequest(this);
+        }
         if (requestInterceptListener != null) {
             requestInterceptListener.beforeRequest(this);
         }
@@ -203,9 +208,11 @@ public class HttpRequest extends UriRequest {
                     if (!TextUtils.isEmpty(contentType)) {
                         connection.setRequestProperty("Content-Type", contentType);
                     }
+                    boolean isChunkedMode = false;
                     long contentLength = body.getContentLength();
                     if (contentLength < 0) {
                         connection.setChunkedStreamingMode(256 * 1024);
+                        isChunkedMode = true;
                     } else {
                         if (contentLength < Integer.MAX_VALUE) {
                             connection.setFixedLengthStreamingMode((int) contentLength);
@@ -213,9 +220,16 @@ public class HttpRequest extends UriRequest {
                             connection.setFixedLengthStreamingMode(contentLength);
                         } else {
                             connection.setChunkedStreamingMode(256 * 1024);
+                            isChunkedMode = true;
                         }
                     }
-                    connection.setRequestProperty("Content-Length", String.valueOf(contentLength));
+
+                    if (isChunkedMode) {
+                        connection.setRequestProperty("Transfer-Encoding", "chunked");
+                    } else {
+                        connection.setRequestProperty("Content-Length", String.valueOf(contentLength));
+                    }
+
                     connection.setDoOutput(true);
                     body.writeTo(connection.getOutputStream());
                 }
@@ -235,9 +249,13 @@ public class HttpRequest extends UriRequest {
 
         // check response code
         responseCode = connection.getResponseCode();
-        // intercept response
-        if (requestInterceptListener != null) {
-            requestInterceptListener.afterRequest(this);
+        {   // intercept response
+            if (responseParser != null) {
+                responseParser.afterRequest(this);
+            }
+            if (requestInterceptListener != null) {
+                requestInterceptListener.afterRequest(this);
+            }
         }
         if (responseCode == 204 || responseCode == 205) { // empty content
             throw new HttpException(responseCode, this.getResponseMessage());
@@ -245,7 +263,8 @@ public class HttpRequest extends UriRequest {
             HttpException httpException = new HttpException(responseCode, this.getResponseMessage());
             try {
                 httpException.setResult(IOUtil.readStr(this.getInputStream(), params.getCharset()));
-            } catch (Throwable ignored) {
+            } catch (Throwable ex) {
+                LogUtil.w(ex.getMessage(), ex);
             }
             LogUtil.e(httpException.toString() + ", url: " + queryUrl);
             throw httpException;
@@ -280,9 +299,6 @@ public class HttpRequest extends UriRequest {
 
     /**
      * 尝试从缓存获取结果, 并为请求头加入缓存控制参数.
-     *
-     * @return
-     * @throws Throwable
      */
     @Override
     public Object loadResultFromCache() throws Throwable {
@@ -348,20 +364,18 @@ public class HttpRequest extends UriRequest {
 
     @Override
     public long getContentLength() {
-        long result = 0;
+        long result = -1;
         if (connection != null) {
             try {
-                result = connection.getContentLength();
+                String value = connection.getHeaderField("content-length");
+                if (value != null) {
+                    result = Long.parseLong(value);
+                }
             } catch (Throwable ex) {
                 LogUtil.e(ex.getMessage(), ex);
             }
-            if (result < 1) {
-                try {
-                    result = this.getInputStream().available();
-                } catch (Throwable ignored) {
-                }
-            }
-        } else {
+        }
+        if (result < 1) {
             try {
                 result = this.getInputStream().available();
             } catch (Throwable ignored) {
@@ -471,8 +485,6 @@ public class HttpRequest extends UriRequest {
                 "EEE, dd MMM y HH:mm:ss 'GMT'", Locale.US);
         TimeZone gmtZone = TimeZone.getTimeZone("GMT");
         sdf.setTimeZone(gmtZone);
-        GregorianCalendar gc = new GregorianCalendar(gmtZone);
-        gc.setTimeInMillis(date.getTime());
         return sdf.format(date);
     }
 }

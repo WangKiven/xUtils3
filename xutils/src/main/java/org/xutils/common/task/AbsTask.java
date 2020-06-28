@@ -1,5 +1,7 @@
 package org.xutils.common.task;
 
+import android.os.Looper;
+
 import org.xutils.common.Callback;
 
 import java.util.concurrent.Executor;
@@ -9,7 +11,7 @@ import java.util.concurrent.Executor;
  * Created by wyouflf on 15/6/5.
  * 异步任务基类
  *
- * @param <ResultType>
+ * @param <ResultType> 任务返回值类型
  */
 public abstract class AbsTask<ResultType> implements Callback.Cancelable {
 
@@ -57,6 +59,10 @@ public abstract class AbsTask<ResultType> implements Callback.Cancelable {
         return null;
     }
 
+    public Looper customLooper() {
+        return null;
+    }
+
     protected final void update(int flag, Object... args) {
         if (taskProxy != null) {
             taskProxy.onUpdate(flag, args);
@@ -72,15 +78,17 @@ public abstract class AbsTask<ResultType> implements Callback.Cancelable {
     /**
      * 取消任务时是否不等待任务彻底结束, 立即收到取消的通知.
      *
-     * @return
+     * @return 是否立即响应取消回调
      */
     protected boolean isCancelFast() {
         return false;
     }
 
     @Override
-    public final synchronized void cancel() {
-        if (!this.isCancelled) {
+    public final void cancel() {
+        if (this.isCancelled) return;
+        synchronized (this) {
+            if (this.isCancelled) return;
             this.isCancelled = true;
             cancelWorks();
             if (cancelHandler != null && !cancelHandler.isCancelled()) {

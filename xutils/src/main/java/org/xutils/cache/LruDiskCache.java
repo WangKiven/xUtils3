@@ -13,7 +13,6 @@ import org.xutils.common.util.MD5;
 import org.xutils.common.util.ProcessLock;
 import org.xutils.config.DbConfigs;
 import org.xutils.db.sqlite.WhereBuilder;
-import org.xutils.ex.DbException;
 import org.xutils.ex.FileLockedException;
 import org.xutils.x;
 
@@ -29,6 +28,9 @@ import java.util.concurrent.Executor;
  */
 public final class LruDiskCache {
 
+    /**
+     * key: cacheDirName
+     */
     private static final HashMap<String, LruDiskCache> DISK_CACHE_MAP = new HashMap<String, LruDiskCache>(5);
 
     private static final int LIMIT_COUNT = 5000; // 限制最多5000条数据
@@ -39,7 +41,7 @@ public final class LruDiskCache {
     private static final String TEMP_FILE_SUFFIX = ".tmp";
 
     private boolean available = false;
-    private final DbManager cacheDb;
+    private DbManager cacheDb;
     private File cacheDir;
     private long diskCacheSize = LIMIT_SIZE;
     private final Executor trimExecutor = new PriorityExecutor(1, true);
@@ -58,10 +60,15 @@ public final class LruDiskCache {
     }
 
     private LruDiskCache(String dirName) {
-        this.cacheDb = x.getDb(DbConfigs.HTTP.getConfig());
-        this.cacheDir = FileUtil.getCacheDir(dirName);
-        if (this.cacheDir != null && (this.cacheDir.exists() || this.cacheDir.mkdirs())) {
-            available = true;
+        try {
+            this.cacheDir = FileUtil.getCacheDir(dirName);
+            if (this.cacheDir != null && (this.cacheDir.exists() || this.cacheDir.mkdirs())) {
+                available = true;
+            }
+            this.cacheDb = x.getDb(DbConfigs.HTTP.getConfig());
+        } catch (Throwable ex) {
+            available = false;
+            LogUtil.e(ex.getMessage(), ex);
         }
         deleteNoIndexFiles();
     }
@@ -126,7 +133,7 @@ public final class LruDiskCache {
 
         try {
             cacheDb.replace(entity);
-        } catch (DbException ex) {
+        } catch (Throwable ex) {
             LogUtil.e(ex.getMessage(), ex);
         }
 
@@ -143,11 +150,11 @@ public final class LruDiskCache {
         if (entity != null && new File(entity.getPath()).exists()) {
             ProcessLock processLock = ProcessLock.tryLock(entity.getPath(), false, LOCK_WAIT);
             if (processLock != null && processLock.isValid()) {
-                result = new DiskCacheFile(entity, entity.getPath(), processLock);
+                result = new DiskCacheFile(entity.getPath(), entity, processLock);
                 if (!result.exists()) {
                     try {
                         cacheDb.delete(entity);
-                    } catch (DbException ex) {
+                    } catch (Throwable ex) {
                         LogUtil.e(ex.getMessage(), ex);
                     }
                     result = null;
@@ -169,7 +176,7 @@ public final class LruDiskCache {
         String tempFilePath = entity.getPath() + TEMP_FILE_SUFFIX;
         ProcessLock processLock = ProcessLock.tryLock(tempFilePath, true);
         if (processLock != null && processLock.isValid()) {
-            result = new DiskCacheFile(entity, tempFilePath, processLock);
+            result = new DiskCacheFile(tempFilePath, entity, processLock);
             if (!result.getParentFile().exists()) {
                 result.mkdirs();
             }
@@ -190,16 +197,12 @@ public final class LruDiskCache {
      * @param cacheFile
      */
     /*package*/ DiskCacheFile commitDiskCacheFile(DiskCacheFile cacheFile) throws IOException {
-        if (cacheFile != null && cacheFile.length() < 1L) {
-            IOUtil.closeQuietly(cacheFile);
-            return null;
-        }
         if (!available || cacheFile == null) {
-            return null;
+            return cacheFile;
         }
 
         DiskCacheFile result = null;
-        DiskCacheEntity cacheEntity = cacheFile.cacheEntity;
+        DiskCacheEntity cacheEntity = cacheFile.getCacheEntity();
         if (cacheFile.getName().endsWith(TEMP_FILE_SUFFIX)) { // is temp file
             ProcessLock processLock = null;
             DiskCacheFile destFile = null;
@@ -207,12 +210,12 @@ public final class LruDiskCache {
                 String destPath = cacheEntity.getPath();
                 processLock = ProcessLock.tryLock(destPath, true, LOCK_WAIT);
                 if (processLock != null && processLock.isValid()) { // lock
-                    destFile = new DiskCacheFile(cacheEntity, destPath, processLock);
+                    destFile = new DiskCacheFile(destPath, cacheEntity, processLock);
                     if (cacheFile.renameTo(destFile)) {
                         try {
                             result = destFile;
                             cacheDb.replace(cacheEntity);
-                        } catch (DbException ex) {
+                        } catch (Throwable ex) {
                             LogUtil.e(ex.getMessage(), ex);
                         }
 
@@ -248,80 +251,81 @@ public final class LruDiskCache {
         trimExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                if (available) {
+                if (!available) return;
 
-                    long current = System.currentTimeMillis();
-                    if (current - lastTrimTime < TRIM_TIME_SPAN) {
-                        return;
-                    } else {
-                        lastTrimTime = current;
-                    }
+                long current = System.currentTimeMillis();
+                if (current - lastTrimTime < TRIM_TIME_SPAN) {
+                    return;
+                } else {
+                    lastTrimTime = current;
+                }
 
-                    // trim expires
-                    deleteExpiry();
+                // trim expires
+                deleteExpiry();
 
-                    // trim db
-                    try {
-                        int count = (int) cacheDb.selector(DiskCacheEntity.class).count();
-                        if (count > LIMIT_COUNT + 10) {
-                            List<DiskCacheEntity> rmList = cacheDb.selector(DiskCacheEntity.class)
-                                    .orderBy("lastAccess").orderBy("hits")
-                                    .limit(count - LIMIT_COUNT).offset(0).findAll();
-                            if (rmList != null && rmList.size() > 0) {
-                                // delete cache files
-                                for (DiskCacheEntity entity : rmList) {
-                                    try {
-                                        // delete db entity
-                                        cacheDb.delete(entity);
-                                        // delete cache files
-                                        String path = entity.getPath();
-                                        if (!TextUtils.isEmpty(path)) {
-                                            deleteFileWithLock(path);
-                                            deleteFileWithLock(path + TEMP_FILE_SUFFIX);
-                                        }
-                                    } catch (DbException ex) {
-                                        LogUtil.e(ex.getMessage(), ex);
+                // trim db
+                try {
+                    int count = (int) cacheDb.selector(DiskCacheEntity.class).count();
+                    if (count > LIMIT_COUNT + 10) {
+                        List<DiskCacheEntity> rmList = cacheDb.selector(DiskCacheEntity.class)
+                                .orderBy("lastAccess").orderBy("hits")
+                                .limit(count - LIMIT_COUNT).offset(0).findAll();
+                        if (rmList != null && rmList.size() > 0) {
+                            // delete cache files
+                            for (DiskCacheEntity entity : rmList) {
+                                try {
+                                    // delete db entity
+                                    cacheDb.delete(entity);
+                                    // delete cache files
+                                    String path = entity.getPath();
+                                    if (!TextUtils.isEmpty(path)) {
+                                        deleteFileWithLock(path);
+                                        deleteFileWithLock(path + TEMP_FILE_SUFFIX);
                                     }
-                                }
-
-                            }
-                        }
-                    } catch (DbException ex) {
-                        LogUtil.e(ex.getMessage(), ex);
-                    }
-
-                    // trim disk
-                    try {
-                        while (FileUtil.getFileOrDirSize(cacheDir) > diskCacheSize) {
-                            List<DiskCacheEntity> rmList = cacheDb.selector(DiskCacheEntity.class)
-                                    .orderBy("lastAccess").orderBy("hits").limit(10).offset(0).findAll();
-                            if (rmList != null && rmList.size() > 0) {
-                                // delete cache files
-                                for (DiskCacheEntity entity : rmList) {
-                                    try {
-                                        // delete db entity
-                                        cacheDb.delete(entity);
-                                        // delete cache files
-                                        String path = entity.getPath();
-                                        if (!TextUtils.isEmpty(path)) {
-                                            deleteFileWithLock(path);
-                                            deleteFileWithLock(path + TEMP_FILE_SUFFIX);
-                                        }
-                                    } catch (DbException ex) {
-                                        LogUtil.e(ex.getMessage(), ex);
-                                    }
+                                } catch (Throwable ex) {
+                                    LogUtil.e(ex.getMessage(), ex);
                                 }
                             }
+
                         }
-                    } catch (DbException ex) {
-                        LogUtil.e(ex.getMessage(), ex);
                     }
+                } catch (Throwable ex) {
+                    LogUtil.e(ex.getMessage(), ex);
+                }
+
+                // trim disk
+                try {
+                    while (FileUtil.getFileOrDirSize(cacheDir) > diskCacheSize) {
+                        List<DiskCacheEntity> rmList = cacheDb.selector(DiskCacheEntity.class)
+                                .orderBy("lastAccess").orderBy("hits").limit(10).offset(0).findAll();
+                        if (rmList != null && rmList.size() > 0) {
+                            // delete cache files
+                            for (DiskCacheEntity entity : rmList) {
+                                try {
+                                    // delete db entity
+                                    cacheDb.delete(entity);
+                                    // delete cache files
+                                    String path = entity.getPath();
+                                    if (!TextUtils.isEmpty(path)) {
+                                        deleteFileWithLock(path);
+                                        deleteFileWithLock(path + TEMP_FILE_SUFFIX);
+                                    }
+                                } catch (Throwable ex) {
+                                    LogUtil.e(ex.getMessage(), ex);
+                                }
+                            }
+                        }
+                    }
+                } catch (Throwable ex) {
+                    LogUtil.e(ex.getMessage(), ex);
                 }
             }
         });
     }
 
     private void deleteExpiry() {
+        if (!available) return;
+
         try {
             WhereBuilder whereBuilder = WhereBuilder.b("expires", "<", System.currentTimeMillis());
             List<DiskCacheEntity> rmList = cacheDb.selector(DiskCacheEntity.class).where(whereBuilder).findAll();
@@ -348,25 +352,25 @@ public final class LruDiskCache {
         trimExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                if (available) {
-                    try {
-                        File[] fileList = cacheDir.listFiles();
-                        if (fileList != null) {
-                            for (File file : fileList) {
-                                try {
-                                    long count = cacheDb.selector(DiskCacheEntity.class)
-                                            .where("path", "=", file.getAbsolutePath()).count();
-                                    if (count < 1) {
-                                        IOUtil.deleteFileOrDir(file);
-                                    }
-                                } catch (Throwable ex) {
-                                    LogUtil.e(ex.getMessage(), ex);
+                if (!available) return;
+
+                try {
+                    File[] fileList = cacheDir.listFiles();
+                    if (fileList != null) {
+                        for (File file : fileList) {
+                            try {
+                                long count = cacheDb.selector(DiskCacheEntity.class)
+                                        .where("path", "=", file.getAbsolutePath()).count();
+                                if (count < 1) {
+                                    IOUtil.deleteFileOrDir(file);
                                 }
+                            } catch (Throwable ex) {
+                                LogUtil.e(ex.getMessage(), ex);
                             }
                         }
-                    } catch (Throwable ex) {
-                        LogUtil.e(ex.getMessage(), ex);
                     }
+                } catch (Throwable ex) {
+                    LogUtil.e(ex.getMessage(), ex);
                 }
             }
         });

@@ -2,6 +2,7 @@ package org.xutils.image;
 
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.widget.ImageView;
@@ -9,8 +10,6 @@ import android.widget.ImageView;
 import org.xutils.common.util.DensityUtil;
 import org.xutils.common.util.LogUtil;
 import org.xutils.http.RequestParams;
-
-import java.lang.reflect.Field;
 
 /**
  * Created by wyouflf on 15/8/21.
@@ -43,7 +42,7 @@ public class ImageOptions {
     private int failureDrawableId = 0;
     private Drawable loadingDrawable = null;
     private Drawable failureDrawable = null;
-    private boolean forceLoadingDrawable = true;//必须显示加载中图标，如果没有加载中图标，显示为空白
+    private boolean forceLoadingDrawable = true;
 
     private ImageView.ScaleType placeholderScaleType = ImageView.ScaleType.CENTER_INSIDE;
     private ImageView.ScaleType imageScaleType = ImageView.ScaleType.CENTER_CROP;
@@ -70,12 +69,18 @@ public class ImageOptions {
         int screenWidth = DensityUtil.getScreenWidth();
         int screenHeight = DensityUtil.getScreenHeight();
 
+        if (this == DEFAULT) {
+            maxWidth = width = screenWidth * 3 / 2;
+            maxHeight = height = screenHeight * 3 / 2;
+            return;
+        }
+
         if (width < 0) {
-            maxWidth = screenWidth * 3 / 2; //Integer.MAX_VALUE;
+            maxWidth = screenWidth * 3 / 2;
             compress = false;
         }
         if (height < 0) {
-            maxHeight = screenHeight * 3 / 2; //Integer.MAX_VALUE;
+            maxHeight = screenHeight * 3 / 2;
             compress = false;
         }
 
@@ -113,10 +118,10 @@ public class ImageOptions {
                     }
                 }
 
-//                if (tempWidth <= 0) tempWidth = getImageViewFieldValue(view, "mMaxWidth");
-//                if (tempHeight <= 0) tempHeight = getImageViewFieldValue(view, "mMaxHeight");
-                if (tempWidth <= 0) tempWidth = view.getMaxWidth();
-                if (tempHeight <= 0) tempHeight = view.getMaxHeight();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    if (tempWidth <= 0) tempWidth = view.getMaxWidth();
+                    if (tempHeight <= 0) tempHeight = view.getMaxHeight();
+                }
             }
 
             if (tempWidth <= 0) tempWidth = screenWidth;
@@ -276,20 +281,6 @@ public class ImageOptions {
         return sb.toString();
     }
 
-    /*private static int getImageViewFieldValue(ImageView view, String fieldName) {
-        int value = 0;
-        try {
-            Field field = ImageView.class.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            int fieldValue = (Integer) field.get(view);
-            if (fieldValue > 0 && fieldValue < Integer.MAX_VALUE) {
-                value = fieldValue;
-            }
-        } catch (Throwable ignored) {
-        }
-        return value;
-    }*/
-
     public interface ParamsBuilder {
         RequestParams buildParams(RequestParams params, ImageOptions options);
     }
@@ -312,10 +303,6 @@ public class ImageOptions {
 
         /**
          * 小于0时不采样压缩. 等于0时自动识别ImageView的宽高和(maxWidth, maxHeight).
-         *
-         * @param width
-         * @param height
-         * @return
          */
         public Builder setSize(int width, int height) {
             options.width = width;
