@@ -22,8 +22,10 @@ import android.view.ViewGroup;
 
 import org.xutils.ViewInjector;
 import org.xutils.common.util.LogUtil;
+import org.xutils.view.annotation.ArguInject;
 import org.xutils.view.annotation.ContentView;
 import org.xutils.view.annotation.Event;
+import org.xutils.view.annotation.IntentInject;
 import org.xutils.view.annotation.ViewInject;
 import org.xutils.x;
 
@@ -90,7 +92,7 @@ public final class ViewInjectorImpl implements ViewInjector {
 
     @Override
     public void inject(Object handler, View view) {
-        injectObject(handler, handler.getClass(), new ViewFinder(view));
+        injectObject(handler, handler.getClass(), new ViewFinder(view, handler));
     }
 
     @Override
@@ -111,7 +113,7 @@ public final class ViewInjectorImpl implements ViewInjector {
         }
 
         // inject res & event
-        injectObject(fragment, handlerType, new ViewFinder(view));
+        injectObject(fragment, handlerType, new ViewFinder(view, fragment));
 
         return view;
     }
@@ -149,8 +151,8 @@ public final class ViewInjectorImpl implements ViewInjector {
                 if (
                     /* 不注入静态字段 */     Modifier.isStatic(field.getModifiers()) ||
                         /* 不注入final字段 */    Modifier.isFinal(field.getModifiers())/* ||*/
-                        /* 不注入基本类型字段 */  /*fieldType.isPrimitive() ||*/
-                        /* 不注入数组类型字段 */  /*fieldType.isArray()*/) {
+                    /* 不注入基本类型字段 */  /*fieldType.isPrimitive() ||*/
+                    /* 不注入数组类型字段 */  /*fieldType.isArray()*/) {
                     continue;
                 }
 
@@ -164,6 +166,46 @@ public final class ViewInjectorImpl implements ViewInjector {
                         } else {
                             throw new RuntimeException("Invalid @ViewInject for "
                                     + handlerType.getSimpleName() + "." + field.getName());
+                        }
+                    } catch (Throwable ex) {
+                        LogUtil.e(ex.getMessage(), ex);
+                    }
+                } else if (field.isAnnotationPresent(IntentInject.class)) {
+                    IntentInject intentInject = field.getAnnotation(IntentInject.class);
+                    try {
+                        Object extraObj = finder.getExtra(intentInject.value(), field);
+                        if (extraObj != null) {
+                            field.setAccessible(true);
+                            field.set(handler, extraObj);
+                        } else {
+                            String message = "Invalid @ExtraInject for "
+                                    + handlerType.getSimpleName() + "." + field.getName();
+
+                            if (intentInject.option()) {//允许null
+                                LogUtil.w(message);
+                            } else {
+                                throw new RuntimeException(message);
+                            }
+                        }
+                    } catch (Throwable ex) {
+                        LogUtil.e(ex.getMessage(), ex);
+                    }
+                } else if (field.isAnnotationPresent(ArguInject.class)) {
+                    ArguInject arguInject = field.getAnnotation(ArguInject.class);
+                    try {
+                        Object arguObj = finder.getArgu(arguInject.value(), field);
+                        if (arguObj != null) {
+                            field.setAccessible(true);
+                            field.set(handler, arguObj);
+                        } else {
+                            String message = "Invalid @ArguInject for "
+                                    + handlerType.getSimpleName() + "." + field.getName();
+
+                            if (arguInject.option()) {//允许null
+                                LogUtil.w(message);
+                            } else {
+                                throw new RuntimeException(message);
+                            }
                         }
                     } catch (Throwable ex) {
                         LogUtil.e(ex.getMessage(), ex);
